@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contador de Manga - One Piece</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a1a1a;
+      --secondary: #6a8fc0;
+      --accent: #7098c9;
+      --text: #2b2b2b;
+      --background: #394d67;
+      --card: #ffffff;
+      --light-bg: #b9d7ff;
+      --light-text: #2b2b2b;
+    }
+
+    body.light-mode {
+      --background: var(--light-bg);
+      --text: var(--light-text);
+      --card: #ffffff;
+    }
+
+    body {
+      background: var(--background);
+      font-family: 'Quicksand', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .tracker {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      width: 360px;
+      position: relative; /* para posicionar botón modo */
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .buttons {
+      margin: 1rem 0;
+    }
+
+    .buttons button {
+      background: var(--accent);
+      color: white;
+      font-size: 1.4rem;
+      border: none;
+      padding: 0.5rem 1.2rem;
+      margin: 0 0.5rem;
+      border-radius: 30%;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    .buttons button:hover {
+      background: #455e7e;
+      transform: scale(1.1);
+    }
+    
+    #arcName{
+        font-weight: bold;
+    }
+
+    .progress {
+      margin-top: 1.5rem;
+    }
+
+    .bar-container {
+      background: #394d67;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 20px;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+
+    .bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .chapter-info {
+      font-size: 1rem;
+      line-height: 1.2rem;
+    }
+
+    #chapter {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 0 1rem;
+    }
+
+    .reset {
+      margin-top: 1rem;
+    }
+
+    .reset button {
+      background: var(--secondary);
+      color: white;
+      font-size: 1rem;
+      border: none;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin: 0.3rem;
+    }
+
+    .reset button:hover {
+      background: #4c6586;
+    }
+
+    /* Estilos para botón modo claro/oscuro */
+    .toggle-mode {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .toggle-mode button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      width: 28px;
+      height: 28px;
+      color: var(--text);
+      transition: transform 0.3s, color 0.3s;
+    }
+
+    .toggle-mode button:hover {
+      transform: scale(1.2);
+      color: var(--secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="tracker">
+    <div class="toggle-mode">
+      <button id="toggleModeBtn" aria-label="Cambiar modo claro/oscuro" title="Cambiar modo claro/oscuro">
+        <!-- Icono de luna SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+          viewBox="0 0 24 24" width="24" height="24">
+          <path d="M21 12.79A9 9 0 0111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      </button>
+    </div>
+
+    <h1>One Piece</h1>
+
+    <div class="buttons">
+      <button onclick="changeChapter(-1)">-</button>
+      <span id="chapter">1</span>
+      <button onclick="changeChapter(1)">+</button>
+    </div>
+
+    <div class="progress">
+      <div class="chapter-info">
+        <span id="arcName">Arco desconocido</span><br>
+        <span id="percentage">0%</span> del arco leído
+      </div>
+      <div class="bar-container">
+        <div class="bar" id="bar"></div>
+      </div>
+
+      <div class="chapter-info">
+        <span id="globalPercentage">0%</span> del total leído
+      </div>
+      <div class="bar-container">
+        <div class="bar" id="globalBar" style="background: var(--secondary);"></div>
+      </div>
+    </div>
+
+    <div class="reset">
+      <button onclick="resetProgress()">Reiniciar progreso</button>
+    </div>
+  </div>
+
+  <script>
+    const body = document.body;
+    const toggleBtn = document.getElementById('toggleModeBtn');
+
+    // Aplicar modo guardado en localStorage
+    const savedMode = localStorage.getItem('onepiece_mode');
+    if (savedMode === 'light') {
+      body.classList.add('light-mode');
+    } else {
+      body.classList.remove('light-mode');
+    }
+
+    function toggleMode() {
+      body.classList.toggle('light-mode');
+      if (body.classList.contains('light-mode')) {
+        localStorage.setItem('onepiece_mode', 'light');
+      } else {
+        localStorage.setItem('onepiece_mode', 'dark');
+      }
+    }
+
+    toggleBtn.addEventListener('click', toggleMode);
+
+    const chapterEl = document.getElementById('chapter');
+    const percentageEl = document.getElementById('percentage');
+    const globalPercentageEl = document.getElementById('globalPercentage');
+    const barEl = document.getElementById('bar');
+    const globalBarEl = document.getElementById('globalBar');
+    const arcNameEl = document.getElementById('arcName');
+
+    const totalChapters = 1115;
+
+    const arcs = [
+      { name: 'Romance Dawn', start: 1, end: 61 },
+      { name: 'Alabasta', start: 62, end: 217 },
+      { name: 'Skypiea', start: 218, end: 302 },
+      { name: 'Water 7 y Enies Lobby', start: 303, end: 441 },
+      { name: 'Guerra de Marineford', start: 442, end: 597 },
+      { name: 'Dressrosa', start: 598, end: 801 },
+      { name: 'País de Wano', start: 802, end: 1057 },
+      { name: 'Egghead', start: 1058, end: 1115 }
+    ];
+
+    let currentChapter = parseInt(localStorage.getItem('onepiece_chapter')) || 1;
+
+    function getCurrentArc(chapter) {
+      return arcs.find(arc => chapter >= arc.start && chapter <= arc.end) || { name: 'Desconocido', start: 1, end: 1 };
+    }
+
+    function updateProgress() {
+      const arc = getCurrentArc(currentChapter);
+      const total = arc.end - arc.start + 1;
+      const read = Math.min(Math.max(currentChapter - arc.start, 0), total);
+      const percent = Math.round((read / total) * 100);
+      const globalPercent = Math.round((currentChapter / totalChapters) * 100);
+
+      percentageEl.textContent = percent + '%';
+      globalPercentageEl.textContent = globalPercent + '%';
+      arcNameEl.textContent = arc.name + ` (${arc.start}-${arc.end})`;
+
+      barEl.style.width = percent + '%';
+      globalBarEl.style.width = globalPercent + '%';
+      chapterEl.textContent = currentChapter;
+
+      localStorage.setItem('onepiece_chapter', currentChapter);
+    }
+
+    function changeChapter(delta) {
+      currentChapter = Math.min(Math.max(currentChapter + delta, 1), totalChapters);
+      updateProgress();
+    }
+
+    function resetProgress() {
+      currentChapter = 1;
+      updateProgress();
+    }
+
+    updateProgress();
+  </script>
+</body>
+</html>
